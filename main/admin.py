@@ -1,8 +1,9 @@
 from django.contrib import admin
 import datetime
 
-from .models import AdvUser
+from .models import AdvUser, SubRubric, SuperRubric, Bb, AdditionalImage
 from .utilities import send_activation_notification
+from .forms import SubRubricForm
 
 
 def send_activation_notifications(modeladmin, request, queryset):
@@ -15,6 +16,8 @@ def send_activation_notifications(modeladmin, request, queryset):
 send_activation_notifications.short_description = \
     'Отправка писем с требованиями активации'
 
+
+# Класс фильтрации пользователей, не прошедших активацию
 
 class NonactivatedFilter(admin.SimpleListFilter):
     title = 'Прошли активацию?'
@@ -41,6 +44,8 @@ class NonactivatedFilter(admin.SimpleListFilter):
                                    date_joined__date__lt=d)
 
 
+# Класс редактора пользователей
+
 class AdvUserAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'is_activated', 'date_joined')
     search_fields = ('username', 'email', 'first_name', 'last_name')
@@ -57,5 +62,38 @@ class AdvUserAdmin(admin.ModelAdmin):
 admin.site.register(AdvUser, AdvUserAdmin)
 
 
+# Администрирование рубрик
 
-# Register your models here.
+class SubRubricInline(admin.TabularInline):
+    model = SubRubric
+
+
+class SuperRubricAdmin(admin.ModelAdmin):
+    exclude = ('super_rubric',)
+    inlines = (SubRubricInline,)
+
+
+admin.site.register(SuperRubric, SuperRubricAdmin)
+
+
+class SubRubricAdmin(admin.ModelAdmin):
+    form = SubRubricForm
+
+
+admin.site.register(SubRubric, SubRubricAdmin)
+
+
+class AdditionalImageInline(admin.TabularInline):
+    model = AdditionalImage
+
+
+# Объявления в админке
+
+class BbAdmin(admin.ModelAdmin):
+    list_display = ('rubric', 'title', 'content', 'author', 'created_at')
+    fields = (('rubric', 'author'), 'title', 'content', 'price',
+              'contacts', 'image', 'is_active')
+    inlines = (AdditionalImageInline,)
+
+
+admin.site.register(Bb, BbAdmin)
